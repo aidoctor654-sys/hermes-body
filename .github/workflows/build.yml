@@ -21,7 +21,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install SDK components
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        run: yes | sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Create debug keystore
         run: |
@@ -30,7 +30,7 @@ jobs:
 
       - name: Build APK
         run: |
-          set -e
+          set -ex
           ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
           BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
           PLATFORM="$ANDROID_HOME/platforms/android-34/android.jar"
@@ -48,19 +48,19 @@ jobs:
             app/src/main/java/com/hermes/body/HttpServerService.java \
             app/src/main/java/com/hermes/body/MainActivity.java
           
-          # Create DEX
-          mkdir -p build/dex
+          # Create JAR from classes
           cd build/obj
           jar cf ../classes.jar com/hermes/body/*.class
-          cd ..
-          $BUILD_TOOLS/d8 --min-api 24 --output build/dex build/classes.jar nanohttpd.jar
+          cd ../..
+          
+          # Convert to DEX using d8
+          mkdir -p build/apk
+          $BUILD_TOOLS/d8 --min-api 24 --output build/apk build/classes.jar nanohttpd.jar
           
           # Compile resources
-          mkdir -p build/apk
-          cp build/dex/classes.dex build/apk/
           $BUILD_TOOLS/aapt2 compile --dir app/src/main/res -o build/compiled_resources.zip
           
-          # Link APK
+          # Link resources into APK
           $BUILD_TOOLS/aapt2 link \
             -o build/hermes-body-unsigned.apk \
             -I "$PLATFORM" \
@@ -68,12 +68,12 @@ jobs:
             -R build/compiled_resources.zip \
             --auto-add-overlay
           
-          # Add DEX
+          # Add DEX into APK
           cd build/apk
           zip -j ../hermes-body-unsigned.apk classes.dex
           cd ../..
           
-          # Align
+          # Align APK
           $BUILD_TOOLS/zipalign -f 4 build/hermes-body-unsigned.apk build/hermes-body-aligned.apk
           
           # Debug sign
@@ -86,6 +86,7 @@ jobs:
           mkdir -p app/build/outputs/apk/debug
           cp build/hermes-body-aligned.apk app/build/outputs/apk/debug/hermes-body-debug.apk
           ls -la app/build/outputs/apk/debug/hermes-body-debug.apk
+          echo "BUILD SUCCESS!"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
