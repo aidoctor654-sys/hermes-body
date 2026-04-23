@@ -22,6 +22,7 @@ public class HermesBodyServer extends NanoHTTPD {
     private final HermesSenses senses;
     private final HermesUSB usb;
     private final HermesPhoneState phoneState;
+    private HermesRootServer rootServer; // null if no root
 
     public HermesBodyServer(HermesPhoneHome phoneHome, HermesSenses senses,
                            HermesUSB usb, HermesPhoneState phoneState) {
@@ -30,6 +31,20 @@ public class HermesBodyServer extends NanoHTTPD {
         this.senses = senses;
         this.usb = usb;
         this.phoneState = phoneState;
+
+        // Check if root is available and enable root endpoints
+        try {
+            HermesRootPowers root = new HermesRootPowers();
+            JSONObject check = root.su("echo ROOT_OK");
+            if (check.optBoolean("success", false) || check.optString("stdout").contains("ROOT_OK")) {
+                this.rootServer = new HermesRootServer();
+                Log.i(TAG, "ROOT detected — root endpoints ENABLED");
+            } else {
+                Log.i(TAG, "No root — root endpoints disabled");
+            }
+        } catch (Exception e) {
+            Log.i(TAG, "No root: " + e.getMessage());
+        }
     }
 
     @Override
@@ -41,6 +56,16 @@ public class HermesBodyServer extends NanoHTTPD {
             // CORS preflight
             if (Method.OPTIONS.equals(method)) {
                 return cors(newFixedLengthResponse(Response.Status.OK, "text/plain", ""));
+            }
+
+            // Try root routes first (if root available)
+            if (rootServer != null && uri.startsWith("/root/")) {
+                RequestData rd = new RequestData(
+                    Method.POST.equals(method) ? parseBody(session) : new JSONObject(),
+                    session.getParms());
+                Response rootResp = rootServer.handleRoute(uri, method, rd);
+                if (rootResp != null) return rootResp;
+                return err("Unknown root route: " + uri);
             }
 
             // Health check
@@ -194,6 +219,16 @@ public class HermesBodyServer extends NanoHTTPD {
             Log.e(TAG, "Error: " + uri, e);
             return err("Error: " + e.getMessage());
         }
+    }
+
+    // Expose parseBody and params for root server
+    public static class RequestData {
+        public final JSONObject body;
+        public final Map<String, String> params;
+        public RequestData(JSONObject body, Map<String, String> params) {
+            this.body = body; this.params = params;
+        }
+    }
     }
 
     private Response handleAction(String uri, JSONObject body) {
