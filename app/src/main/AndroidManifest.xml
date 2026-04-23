@@ -11,8 +11,7 @@
     <application
         android:allowBackup="false"
         android:label="Hermes Body"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:supportsRtl="true">
 
         <activity
             android:name=".MainActivity"
