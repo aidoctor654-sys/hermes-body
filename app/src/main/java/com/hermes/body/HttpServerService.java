@@ -15,26 +15,53 @@ public class HttpServerService extends Service {
 
     private static final String TAG = "HermesHTTP";
     private static final String CHANNEL_ID = "hermes_body";
+    private static final int PORT = 8421;
+
+    private HermesBodyServer server;
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        startForeground(1, createNotification("Hermes Body running"));
+        startForeground(1, createNotification("Hermes Body: starting server..."));
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        HermesAccessibilityService svc = HermesAccessibilityService.getInstance();
-        if (svc == null) {
-            Log.w(TAG, "Accessibility service not running");
+        Log.i(TAG, "HttpServerService onStartCommand");
+
+        if (server == null) {
+            try {
+                server = new HermesBodyServer();
+                server.start();
+                Log.i(TAG, "Hermes HTTP server started on port " + PORT);
+                updateNotification("Hermes Body: server on :" + PORT);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start HTTP server", e);
+                updateNotification("Hermes Body: ERROR - " + e.getMessage());
+            }
+        } else {
+            Log.i(TAG, "Server already running");
         }
+
         return START_STICKY;
+    }
+
+    private void updateNotification(String text) {
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) {
+            nm.notify(1, createNotification(text));
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (server != null) {
+            server.stop();
+            server = null;
+            Log.i(TAG, "Hermes HTTP server stopped");
+        }
     }
 
     @Override
