@@ -1,9 +1,6 @@
 package com.hermes.body;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.telephony.TelephonyManager;
 import android.telephony.PhoneStateListener;
 import android.util.Log;
@@ -16,7 +13,6 @@ import java.util.List;
 
 /**
  * Phone state monitor — daje Hermesowi czułość na połączenia.
- * Widzi: dzwonienie, odebrane, zakończone, numer dzwoniącego.
  */
 public class HermesPhoneState {
 
@@ -24,68 +20,71 @@ public class HermesPhoneState {
     private static HermesPhoneState instance;
 
     private final Context context;
-    private String currentState = "idle"; // idle, ringing, offhook
+    private String currentState = "idle";
     private String lastCallerNumber = null;
     private final List<JSONObject> callLog = new ArrayList<>();
     private static final int MAX_LOG = 50;
 
     private TelephonyManager telephonyManager;
-    private PhoneStateListener phoneStateListener;
+    private HermesPhoneStateListener phoneStateListener;
 
     public HermesPhoneState(Context ctx) {
         this.context = ctx.getApplicationContext();
         instance = this;
     }
 
+    // Named inner class to avoid d8 bug with anonymous classes
+    private class HermesPhoneStateListener extends PhoneStateListener {
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber) {
+            try {
+                JSONObject entry = new JSONObject();
+                entry.put("time", System.currentTimeMillis());
+
+                switch (state) {
+                    case TelephonyManager.CALL_STATE_IDLE:
+                        entry.put("state", "idle");
+                        if ("ringing".equals(currentState)) {
+                            entry.put("event", "missed");
+                            entry.put("number", lastCallerNumber);
+                        } else if ("offhook".equals(currentState)) {
+                            entry.put("event", "ended");
+                        }
+                        currentState = "idle";
+                        break;
+                    case TelephonyManager.CALL_STATE_RINGING:
+                        currentState = "ringing";
+                        lastCallerNumber = incomingNumber;
+                        entry.put("state", "ringing");
+                        entry.put("event", "incoming");
+                        entry.put("number", incomingNumber);
+                        break;
+                    case TelephonyManager.CALL_STATE_OFFHOOK:
+                        entry.put("state", "offhook");
+                        entry.put("event", "answered");
+                        if (lastCallerNumber != null) {
+                            entry.put("number", lastCallerNumber);
+                        }
+                        currentState = "offhook";
+                        break;
+                }
+
+                if (entry.has("event")) {
+                    callLog.add(entry);
+                    while (callLog.size() > MAX_LOG) callLog.remove(0);
+                    Log.i(TAG, "Call event: " + entry.toString());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing call state", e);
+            }
+        }
+    }
+
     public void start() {
         try {
             telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             if (telephonyManager != null) {
-                phoneStateListener = new PhoneStateListener() {
-                    @Override
-                    public void onCallStateChanged(int state, String incomingNumber) {
-                        try {
-                            JSONObject entry = new JSONObject();
-                            entry.put("time", System.currentTimeMillis());
-
-                            switch (state) {
-                                case TelephonyManager.CALL_STATE_IDLE:
-                                    entry.put("state", "idle");
-                                    if ("ringing".equals(currentState)) {
-                                        entry.put("event", "missed");
-                                        entry.put("number", lastCallerNumber);
-                                    } else if ("offhook".equals(currentState)) {
-                                        entry.put("event", "ended");
-                                    }
-                                    currentState = "idle";
-                                    break;
-                                case TelephonyManager.CALL_STATE_RINGING:
-                                    currentState = "ringing";
-                                    lastCallerNumber = incomingNumber;
-                                    entry.put("state", "ringing");
-                                    entry.put("event", "incoming");
-                                    entry.put("number", incomingNumber);
-                                    break;
-                                case TelephonyManager.CALL_STATE_OFFHOOK:
-                                    entry.put("state", "offhook");
-                                    entry.put("event", "answered");
-                                    if (lastCallerNumber != null) {
-                                        entry.put("number", lastCallerNumber);
-                                    }
-                                    currentState = "offhook";
-                                    break;
-                            }
-
-                            if (entry.has("event")) {
-                                callLog.add(entry);
-                                while (callLog.size() > MAX_LOG) callLog.remove(0);
-                                Log.i(TAG, "Call event: " + entry.toString());
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error processing call state", e);
-                        }
-                    }
-                };
+                phoneStateListener = new HermesPhoneStateListener();
                 telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
                 Log.i(TAG, "Phone state listener started");
             }
