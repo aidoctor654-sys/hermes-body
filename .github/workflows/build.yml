@@ -38,15 +38,13 @@ jobs:
           # Download nanohttpd
           curl -sL "https://repo1.maven.org/maven2/org/nanohttpd/nanohttpd/2.3.1/nanohttpd-2.3.1.jar" -o nanohttpd.jar
           
-          # Compile Java
+          # Compile ALL Java files
           mkdir -p build/obj
+          find app/src/main/java -name '*.java' > build/sources.txt
           javac -source 11 -target 11 \
             -classpath "$PLATFORM:nanohttpd.jar" \
             -d build/obj \
-            app/src/main/java/com/hermes/body/HermesAccessibilityService.java \
-            app/src/main/java/com/hermes/body/HermesBodyServer.java \
-            app/src/main/java/com/hermes/body/HttpServerService.java \
-            app/src/main/java/com/hermes/body/MainActivity.java
+            @build/sources.txt
           
           # Create JAR from classes
           cd build/obj
