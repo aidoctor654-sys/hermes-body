@@ -2,17 +2,15 @@ package com.hermes.body;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
-import android.telephony.PhoneStateListener;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Phone state monitor — daje Hermesowi czułość na połączenia.
+ * Phone state — sprawdza stan na żądanie (polling).
+ * PhoneStateListener powoduje błąd d8 przy kompilacji,
+ * więc używamy getLastKnownState z TelephonyManager.
  */
 public class HermesPhoneState {
 
@@ -20,13 +18,6 @@ public class HermesPhoneState {
     private static HermesPhoneState instance;
 
     private final Context context;
-    private String currentState = "idle";
-    private String lastCallerNumber = null;
-    private final List<JSONObject> callLog = new ArrayList<>();
-    private static final int MAX_LOG = 50;
-
-    private TelephonyManager telephonyManager;
-    private PhoneStateListener phoneStateListener;
 
     public HermesPhoneState(Context ctx) {
         this.context = ctx.getApplicationContext();
@@ -34,109 +25,85 @@ public class HermesPhoneState {
     }
 
     public void start() {
-        try {
-            telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            if (telephonyManager != null) {
-                // Use final array to pass mutable state to static listener
-                final String[] curState = {currentState};
-                final String[] lastNum = {lastCallerNumber};
-                final List<JSONObject> log = callLog;
-
-                phoneStateListener = new PhoneStateListener() {
-                    @Override
-                    public void onCallStateChanged(int state, String incomingNumber) {
-                        handleCallState(state, incomingNumber);
-                    }
-                };
-                telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
-                Log.i(TAG, "Phone state listener started");
-            }
-        } catch (SecurityException e) {
-            Log.e(TAG, "No READ_PHONE_STATE permission", e);
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting phone listener", e);
-        }
+        Log.i(TAG, "Phone state monitor ready (polling mode)");
     }
 
-    // Separate method to avoid d8 anonymous class issues
-    private void handleCallState(int state, String incomingNumber) {
-        try {
-            JSONObject entry = new JSONObject();
-            entry.put("time", System.currentTimeMillis());
-
-            switch (state) {
-                case TelephonyManager.CALL_STATE_IDLE:
-                    entry.put("state", "idle");
-                    if ("ringing".equals(currentState)) {
-                        entry.put("event", "missed");
-                        entry.put("number", lastCallerNumber);
-                    } else if ("offhook".equals(currentState)) {
-                        entry.put("event", "ended");
-                    }
-                    currentState = "idle";
-                    break;
-                case TelephonyManager.CALL_STATE_RINGING:
-                    currentState = "ringing";
-                    lastCallerNumber = incomingNumber;
-                    entry.put("state", "ringing");
-                    entry.put("event", "incoming");
-                    entry.put("number", incomingNumber);
-                    break;
-                case TelephonyManager.CALL_STATE_OFFHOOK:
-                    entry.put("state", "offhook");
-                    entry.put("event", "answered");
-                    if (lastCallerNumber != null) {
-                        entry.put("number", lastCallerNumber);
-                    }
-                    currentState = "offhook";
-                    break;
-            }
-
-            if (entry.has("event")) {
-                callLog.add(entry);
-                while (callLog.size() > MAX_LOG) callLog.remove(0);
-                Log.i(TAG, "Call event: " + entry.toString());
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error processing call state", e);
-        }
-    }
-
-    public void stop() {
-        if (telephonyManager != null && phoneStateListener != null) {
-            telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_NONE);
-        }
-    }
+    public void stop() {}
 
     public static HermesPhoneState getInstance() {
         return instance;
     }
 
-    public String getCurrentState() {
-        return currentState;
-    }
+    public JSONObject getStatus() {
+        JSONObject result = new JSONObject();
+        try {
+            TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm != null) {
+                int callState = tm.getCallState();
+                String stateStr = "idle";
+                if (callState == TelephonyManager.CALL_STATE_RINGING) stateStr = "ringing";
+                else if (callState == TelephonyManager.CALL_STATE_OFFHOOK) stateStr = "offhook";
 
-    public String getLastCallerNumber() {
-        return lastCallerNumber;
+                result.put("state", stateStr);
+                result.put("networkOperator", tm.getNetworkOperatorName());
+                result.put("networkType", tm.getNetworkType());
+                result.put("phoneType", tm.getPhoneType());
+                result.put("simState", tm.getSimState());
+                result.put("simOperator", tm.getSimOperatorName());
+
+                // Try to get number (requires READ_PHONE_STATE + sometimes READ_SMS)
+                try {
+                    String lineNum = tm.getLine1Number();
+                    result.put("lineNumber", lineNum != null ? lineNum : "unknown");
+                } catch (SecurityException e) {
+                    result.put("lineNumber", "no_permission");
+                }
+            }
+        } catch (SecurityException e) {
+            try { result.put("error", "no READ_PHONE_STATE permission"); } catch (Exception ex) {}
+        } catch (Exception e) {
+            try { result.put("error", e.getMessage()); } catch (Exception ex) {}
+        }
+        return result;
     }
 
     public JSONArray getCallLog(int limit) {
         JSONArray arr = new JSONArray();
-        int start = Math.max(0, callLog.size() - limit);
-        for (int i = start; i < callLog.size(); i++) {
-            arr.put(callLog.get(i));
+        try {
+            android.database.Cursor cursor = context.getContentResolver().query(
+                android.provider.CallLog.Calls.CONTENT_URI,
+                new String[] {
+                    android.provider.CallLog.Calls.NUMBER,
+                    android.provider.CallLog.Calls.CACHED_NAME,
+                    android.provider.CallLog.Calls.DATE,
+                    android.provider.CallLog.Calls.DURATION,
+                    android.provider.CallLog.Calls.TYPE
+                },
+                null, null,
+                android.provider.CallLog.Calls.DATE + " DESC LIMIT " + limit
+            );
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    JSONObject call = new JSONObject();
+                    call.put("number", cursor.getString(0));
+                    call.put("name", cursor.getString(1));
+                    call.put("date", cursor.getLong(2));
+                    call.put("duration", cursor.getString(3));
+                    int type = cursor.getInt(4);
+                    String typeStr = "other";
+                    if (type == android.provider.CallLog.Calls.INCOMING_TYPE) typeStr = "incoming";
+                    else if (type == android.provider.CallLog.Calls.OUTGOING_TYPE) typeStr = "outgoing";
+                    else if (type == android.provider.CallLog.Calls.MISSED_TYPE) typeStr = "missed";
+                    call.put("type", typeStr);
+                    arr.put(call);
+                }
+                cursor.close();
+            }
+        } catch (SecurityException e) {
+            Log.e(TAG, "No CALL_LOG permission", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading call log", e);
         }
         return arr;
-    }
-
-    public JSONObject getStatus() {
-        try {
-            return new JSONObject()
-                .put("state", currentState)
-                .put("lastCaller", lastCallerNumber)
-                .put("eventsLogged", callLog.size());
-        } catch (Exception e) {
-            return new JSONObject();
-        }
     }
 }
