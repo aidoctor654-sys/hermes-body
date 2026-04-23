@@ -9,7 +9,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 /**
- * Foreground service that keeps the HTTP server alive.
+ * Foreground service — trzyma serwer HTTP i wszystkie moduły przy życiu.
  */
 public class HttpServerService extends Service {
 
@@ -18,12 +18,26 @@ public class HttpServerService extends Service {
     private static final int PORT = 8421;
 
     private HermesBodyServer server;
+    private HermesPhoneHome phoneHome;
+    private HermesSenses senses;
+    private HermesUSB usb;
+    private HermesPhoneState phoneState;
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        startForeground(1, createNotification("Hermes Body: starting server..."));
+        startForeground(1, createNotification("Hermes Body: starting..."));
+
+        // Initialize all modules
+        phoneHome = new HermesPhoneHome(this);
+        senses = new HermesSenses(this);
+        usb = new HermesUSB(this);
+        phoneState = new HermesPhoneState(this);
+        senses.initTTS();
+        phoneState.start();
+
+        Log.i(TAG, "All Hermes modules initialized");
     }
 
     @Override
@@ -32,7 +46,7 @@ public class HttpServerService extends Service {
 
         if (server == null) {
             try {
-                server = new HermesBodyServer();
+                server = new HermesBodyServer(phoneHome, senses, usb, phoneState);
                 server.start();
                 Log.i(TAG, "Hermes HTTP server started on port " + PORT);
                 updateNotification("Hermes Body: server on :" + PORT);
@@ -47,6 +61,13 @@ public class HttpServerService extends Service {
         return START_STICKY;
     }
 
+    // Expose modules for MainActivity
+    public HermesPhoneHome getPhoneHome() { return phoneHome; }
+    public HermesSenses getSenses() { return senses; }
+    public HermesUSB getUsb() { return usb; }
+    public HermesPhoneState getPhoneState() { return phoneState; }
+    public boolean isServerRunning() { return server != null; }
+
     private void updateNotification(String text) {
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) {
@@ -60,8 +81,10 @@ public class HttpServerService extends Service {
         if (server != null) {
             server.stop();
             server = null;
-            Log.i(TAG, "Hermes HTTP server stopped");
         }
+        if (phoneState != null) phoneState.stop();
+        if (senses != null) senses.initTTS(); // cleanup
+        Log.i(TAG, "Hermes Body stopped");
     }
 
     @Override
