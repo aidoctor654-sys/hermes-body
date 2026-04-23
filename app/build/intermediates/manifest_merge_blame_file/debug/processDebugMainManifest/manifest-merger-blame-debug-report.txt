@@ -1,0 +1,92 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.hermes.body"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:4:5-67
+11-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.ACCESSIBILITY" />
+12-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:5:5-72
+12-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:5:22-69
+13    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+13-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:6:5-77
+13-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:6:22-74
+14    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+14-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:7:5-77
+14-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:7:22-74
+15
+16    <application
+16-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:9:5-44:19
+17        android:allowBackup="false"
+17-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:10:9-36
+18        android:debuggable="true"
+19        android:extractNativeLibs="false"
+20        android:icon="@mipmap/ic_launcher"
+20-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:11:9-43
+21        android:label="Hermes Body"
+21-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:12:9-36
+22        android:supportsRtl="true"
+22-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:13:9-35
+23        android:theme="@style/Theme.HermesBody" >
+23-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:14:9-48
+24        <activity
+24-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:16:9-24:20
+25            android:name="com.hermes.body.MainActivity"
+25-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:17:13-41
+26            android:exported="true"
+26-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:18:13-36
+27            android:label="Hermes Body" >
+27-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:19:13-40
+28            <intent-filter>
+28-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:20:13-23:29
+29                <action android:name="android.intent.action.MAIN" />
+29-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:21:17-69
+29-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:21:25-66
+30
+31                <category android:name="android.intent.category.LAUNCHER" />
+31-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:22:17-77
+31-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:22:27-74
+32            </intent-filter>
+33        </activity>
+34
+35        <service
+35-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:26:9-37:19
+36            android:name="com.hermes.body.HermesAccessibilityService"
+36-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:27:13-55
+37            android:exported="false"
+37-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:28:13-37
+38            android:label="Hermes Body"
+38-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:29:13-40
+39            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+39-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:30:13-79
+40            <intent-filter>
+40-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:31:13-33:29
+41                <action android:name="android.accessibilityservice.AccessibilityService" />
+41-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:32:17-92
+41-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:32:25-89
+42            </intent-filter>
+43
+44            <meta-data
+44-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:34:13-36:72
+45                android:name="android.accessibilityservice"
+45-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:35:17-60
+46                android:resource="@xml/accessibility_service_config" />
+46-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:36:17-69
+47        </service>
+48        <service
+48-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:39:9-42:56
+49            android:name="com.hermes.body.HttpServerService"
+49-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:40:13-46
+50            android:exported="false"
+50-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:41:13-37
+51            android:foregroundServiceType="dataSync" />
+51-->/data/data/com.termux/files/home/hermes-body/app/src/main/AndroidManifest.xml:42:13-53
+52    </application>
+53
+54</manifest>
