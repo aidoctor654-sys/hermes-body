@@ -229,7 +229,6 @@ public class HermesBodyServer extends NanoHTTPD {
             this.body = body; this.params = params;
         }
     }
-    }
 
     private Response handleAction(String uri, JSONObject body) {
         try {

@@ -200,20 +200,4 @@ public class HermesRootServer {
         r.addHeader("Access-Control-Allow-Origin", "*");
         return r;
     }
-
-    /**
-     * Simple container for request data (body + params)
-     */
-    public static class RequestData {
-        private final JSONObject body;
-        private final Map<String, String> params;
-
-        public RequestData(JSONObject body, Map<String, String> params) {
-            this.body = body;
-            this.params = params;
-        }
-
-        public JSONObject getBody() { return body; }
-        public Map<String, String> getParams() { return params; }
-    }
 }
