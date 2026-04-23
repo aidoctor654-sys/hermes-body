@@ -21,11 +21,12 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install SDK components
-        run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Build APK manually (no Gradle)
+      - name: Create debug keystore
+        run: keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Hermes,O=Hermes,C=PL"
+
+      - name: Build APK
         run: |
           set -e
           ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
@@ -49,31 +50,28 @@ jobs:
           mkdir -p build/dex
           cd build/obj
           jar cf ../classes.jar com/hermes/body/*.class
-          cd ../..
+          cd ..
           $BUILD_TOOLS/d8 --min-api 24 --output build/dex build/classes.jar nanohttpd.jar
           
-          # Create APK using aapt2 (available on x86_64 ubuntu)
+          # Compile resources
           mkdir -p build/apk
           cp build/dex/classes.dex build/apk/
-          
-          # Compile resources
           $BUILD_TOOLS/aapt2 compile --dir app/src/main/res -o build/compiled_resources.zip
           
-          # Link resources with manifest
+          # Link APK
           $BUILD_TOOLS/aapt2 link \
             -o build/hermes-body-unsigned.apk \
             -I "$PLATFORM" \
             --manifest app/src/main/AndroidManifest.xml \
             -R build/compiled_resources.zip \
-            --java build/gen \
             --auto-add-overlay
           
-          # Add DEX to APK
+          # Add DEX
           cd build/apk
           zip -j ../hermes-body-unsigned.apk classes.dex
           cd ../..
           
-          # Align APK
+          # Align
           $BUILD_TOOLS/zipalign -f 4 build/hermes-body-unsigned.apk build/hermes-body-aligned.apk
           
           # Debug sign
@@ -81,22 +79,11 @@ jobs:
             --ks ~/.android/debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
-            build/hermes-body-aligned.apk || {
-              # Create debug keystore if missing
-              keytool -genkey -v -keystore ~/.android/debug.keystore \
-                -alias androiddebugkey -storepass android -keypass android \
-                -keyalg RSA -keysize 2048 -validity 10000 \
-                -dname "CN=Hermes, OU=Body, O=Hermes, L=Android, ST=Local, C=PL"
-              $BUILD_TOOLS/apksigner sign \
-                --ks ~/.android/debug.keystore \
-                --ks-pass pass:android \
-                --key-pass pass:android \
-                build/hermes-body-aligned.apk
-            }
+            build/hermes-body-aligned.apk
           
           mkdir -p app/build/outputs/apk/debug
           cp build/hermes-body-aligned.apk app/build/outputs/apk/debug/hermes-body-debug.apk
-          echo "APK built successfully!"
+          ls -la app/build/outputs/apk/debug/hermes-body-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
