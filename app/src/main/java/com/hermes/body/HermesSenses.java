@@ -229,8 +229,8 @@ public class HermesSenses {
             result.put("ok", true);
             result.put("stream", stream);
             result.put("level", level);
-        } catch (SecurityException e) {
-            try { result.put("error", "no permission to change volume"); } catch (Exception ex) {}
+        } catch (Exception e) {
+            try { result.put("error", e.getMessage()); } catch (Exception ex) {}
         }
         return result;
     }
