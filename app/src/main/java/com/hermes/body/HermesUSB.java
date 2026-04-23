@@ -345,22 +345,26 @@ public class HermesUSB {
         return sb.toString();
     }
 
-    // USB Event receiver
-    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
+    // USB Event receiver (named class to avoid d8 bug)
+    private static class UsbEventReceiver extends BroadcastReceiver {
+        private final HermesUSB host;
+        UsbEventReceiver(HermesUSB host) { this.host = host; }
         @Override
         public void onReceive(Context ctx, Intent intent) {
             String action = intent.getAction();
             if (ACTION_USB_PERMISSION.equals(action)) {
                 boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
                 UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                Log.i(TAG, "USB permission " + (granted ? "granted" : "denied") + 
+                Log.i(TAG, "USB permission " + (granted ? "granted" : "denied") +
                     " for " + (device != null ? device.getDeviceName() : "?"));
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.i(TAG, "USB device attached");
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 Log.i(TAG, "USB device detached");
-                disconnect();
+                host.disconnect();
             }
         }
-    };
+    }
+
+    private final BroadcastReceiver usbReceiver = new UsbEventReceiver(this);
 }
