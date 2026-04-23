@@ -143,7 +143,7 @@ public class HermesBodyServer extends NanoHTTPD {
             if ("/notifications/active".equals(uri)) {
                 HermesNotificationListener nl = HermesNotificationListener.getInstance();
                 if (nl == null) return err("Notification listener not enabled. Enable in Settings > Notification access.");
-                return ok(new JSONObject().put("notifications", nl.getActiveNotifications()));
+                return ok(new JSONObject().put("notifications", nl.getActiveNotificationsJSON()));
             }
 
             if ("/notifications/recent".equals(uri)) {

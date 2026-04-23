@@ -41,7 +41,7 @@ public class HermesRootServer {
         try {
             // Only POST root commands
             if (NanoHTTPD.Method.POST.equals(method)) {
-                JSONObject body = requestData.getBody();
+                JSONObject body = requestData.body;
 
                 switch (uri) {
                     // Instant touch (no accessibility delay)

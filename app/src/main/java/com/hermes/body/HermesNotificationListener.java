@@ -65,12 +65,12 @@ public class HermesNotificationListener extends NotificationListenerService {
     }
 
     /**
-     * Get all current active notifications
+     * Get all current active notifications as JSONArray
      */
-    public JSONArray getActiveNotifications() {
+    public JSONArray getActiveNotificationsJSON() {
         JSONArray arr = new JSONArray();
         try {
-            StatusBarNotification[] active = getActiveNotifications();
+            StatusBarNotification[] active = super.getActiveNotifications();
             if (active != null) {
                 for (StatusBarNotification sbn : active) {
                     arr.put(parseNotification(sbn, "active"));
