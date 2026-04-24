@@ -20,6 +20,15 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Auto-start HTTP server on launch
+        try {
+            Intent svc = new Intent(this, HttpServerService.class);
+            startForegroundService(svc);
+            Log.i("HermesBody", "HTTP server auto-started from MainActivity");
+        } catch (Exception e) {
+            Log.e("HermesBody", "Auto-start failed: " + e.getMessage());
+        }
+
         ScrollView scrollView = new ScrollView(this);
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
