@@ -64,7 +64,8 @@ jobs:
             -I "$PLATFORM" \
             --manifest app/src/main/AndroidManifest.xml \
             -R build/compiled_resources.zip \
-            --auto-add-overlay
+            --auto-add-overlay \
+            --min-sdk-version 24
           
           # Add DEX into APK
           cd build/apk
