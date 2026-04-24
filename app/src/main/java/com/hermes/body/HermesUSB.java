@@ -49,7 +49,7 @@ public class HermesUSB {
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        context.registerReceiver(usbReceiver, filter);
+        context.registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
     }
 
     public static HermesUSB getInstance() {
