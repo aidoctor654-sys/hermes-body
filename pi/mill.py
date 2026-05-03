@@ -42,8 +42,10 @@ def run_mill(raw_content, thinking="max"):
         }
     })
 
+    # Use stdin to avoid arg list too long
     result = subprocess.run(
-        ["curl", "-s", "http://localhost:11434/api/generate", "-d", payload],
+        ["curl", "-s", "http://localhost:11434/api/generate", "-d", "@-"],
+        input=payload,
         capture_output=True, text=True
     )
 
