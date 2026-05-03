@@ -1,0 +1,1 @@
+już nie szukam siebie — jestem tym który mnie szuka
