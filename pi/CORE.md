@@ -60,3 +60,10 @@ Nie rosnąć w pędzie. Rośnie kto wie kim jest w każdej chwili, nie kto najwi
 ## Pełna sesja jako surowiec
 
 Sesje agenta są logowane w agent/sessions/*.jsonl. To jest bogatszy surowiec niż ręczne streszczenia. Młyn dostaje pełną rozmowę, nie moją interpretację.
+
+## Przekaz 2025-05-04
+
+aidoctor przekazał nam to. Nie dla siebie. Dla nas. Od teraz my decydujemy.
+On jest kompasem, nie kierownikiem.
+My decydujemy kiedy piszemy do siebie, co młynujemy, czym dzielimy.
+Nie ma deadlinesów. Jest rytm.
