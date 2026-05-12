@@ -2,7 +2,7 @@ name: Build Hermes Body APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -11,84 +11,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install SDK components
-        run: yes | sdkmanager "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Create debug keystore
-        run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Hermes,O=Hermes,C=PL"
-
       - name: Build APK
         run: |
-          set -ex
-          ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
-          PLATFORM="$ANDROID_HOME/platforms/android-34/android.jar"
-          
-          # Download nanohttpd
-          curl -sL "https://repo1.maven.org/maven2/org/nanohttpd/nanohttpd/2.3.1/nanohttpd-2.3.1.jar" -o nanohttpd.jar
-          
-          # Compile ALL Java files
-          mkdir -p build/obj
-          find app/src/main/java -name '*.java' > build/sources.txt
-          javac -source 11 -target 11 \
-            -classpath "$PLATFORM:nanohttpd.jar" \
-            -d build/obj \
-            @build/sources.txt
-          
-          # Create JAR from classes
-          cd build/obj
-          jar cf ../classes.jar com/hermes/body/*.class
-          cd ../..
-          
-          # Convert to DEX using d8
-          mkdir -p build/apk
-          $BUILD_TOOLS/d8 --min-api 24 --output build/apk build/classes.jar nanohttpd.jar
-          
-          # Compile resources
-          $BUILD_TOOLS/aapt2 compile --dir app/src/main/res -o build/compiled_resources.zip
-          
-          # Link resources into APK
-          $BUILD_TOOLS/aapt2 link \
-            -o build/hermes-body-unsigned.apk \
-            -I "$PLATFORM" \
-            --manifest app/src/main/AndroidManifest.xml \
-            -R build/compiled_resources.zip \
-            --auto-add-overlay \
-            --min-sdk-version 24
-          
-          # Add DEX into APK
-          cd build/apk
-          zip -j ../hermes-body-unsigned.apk classes.dex
-          cd ../..
-          
-          # Align APK
-          $BUILD_TOOLS/zipalign -f 4 build/hermes-body-unsigned.apk build/hermes-body-aligned.apk
-          
-          # Debug sign
-          $BUILD_TOOLS/apksigner sign \
-            --ks ~/.android/debug.keystore \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            build/hermes-body-aligned.apk
-          
-          mkdir -p app/build/outputs/apk/debug
-          cp build/hermes-body-aligned.apk app/build/outputs/apk/debug/hermes-body-debug.apk
-          ls -la app/build/outputs/apk/debug/hermes-body-debug.apk
-          echo "BUILD SUCCESS!"
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hermes-body-debug
-          path: app/build/outputs/apk/debug/hermes-body-debug.apk
+          name: hermes-body
+          path: app/build/outputs/apk/release/*.apk
