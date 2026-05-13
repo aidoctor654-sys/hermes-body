@@ -31,6 +31,12 @@ android {
     }
 }
 
+repositories {
+    google()
+    mavenCentral()
+}
+
 dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
     implementation("org.json:json:20231013")
 }
