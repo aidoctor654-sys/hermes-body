@@ -1,59 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- AndroidManifest.xml — Hermes Body -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
-    <uses-permission android:name="android.permission.BIND_VOICE_INTERACTION" />
 
     <application
         android:allowBackup="true"
         android:label="Hermes Body"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoDisplay">
+        android:supportsRtl="true">
 
-        <!-- Mini floating UI overlay (Etap 4) -->
-        <activity
-            android:name=".OverlayActivity"
-            android:exported="false"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
-        <!-- Main Foreground Service -->
         <service
             android:name=".HermesBodyService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
-
-        <!-- VoiceInteractionService — asystent systemowy -->
-        <service
-            android:name=".HermesVoiceInteractionService"
-            android:exported="true"
-            android:permission="android.permission.BIND_VOICE_INTERACTION">
-            <intent-filter>
-                <action android:name="android.service.voice.VoiceInteractionService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.voice_interaction"
-                android:resource="@xml/voice_interaction" />
-        </service>
-
-        <!-- AccessibilityService — dostęp do UI -->
-        <service
-            android:name=".HermesAccessibilityService"
-            android:exported="true"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_config" />
-        </service>
 
     </application>
 </manifest>
