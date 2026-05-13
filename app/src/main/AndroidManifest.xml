@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- AndroidManifest.xml — Hermes Body -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hellios.hermesbody">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
